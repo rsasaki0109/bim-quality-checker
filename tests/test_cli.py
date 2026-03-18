@@ -106,3 +106,57 @@ class TestCheckCommand:
             main, ["check", "/nonexistent/model.ifc", "/nonexistent/scan.ply"]
         )
         assert result.exit_code != 0
+
+    def test_check_has_threshold_option(self) -> None:
+        runner = CliRunner()
+        result = runner.invoke(main, ["check", "--help"])
+        assert result.exit_code == 0
+        assert "--threshold" in result.output
+
+
+class TestElementsCommand:
+    def test_elements_help(self) -> None:
+        runner = CliRunner()
+        result = runner.invoke(main, ["elements", "--help"])
+        assert result.exit_code == 0
+        assert "Per-element" in result.output
+
+    def test_elements_missing_files(self) -> None:
+        runner = CliRunner()
+        result = runner.invoke(
+            main, ["elements", "/nonexistent/model.ifc", "/nonexistent/scan.ply"]
+        )
+        assert result.exit_code != 0
+
+
+class TestDeviationCommand:
+    def test_deviation_help(self) -> None:
+        runner = CliRunner()
+        result = runner.invoke(main, ["deviation", "--help"])
+        assert result.exit_code == 0
+        assert "deviation" in result.output.lower()
+
+    def test_deviation_missing_files(self) -> None:
+        runner = CliRunner()
+        result = runner.invoke(
+            main,
+            ["deviation", "/nonexistent/model.ifc", "/nonexistent/scan.ply",
+             "-o", "/tmp/out.ply"],
+        )
+        assert result.exit_code != 0
+
+
+class TestReportMarkdown:
+    def test_report_markdown(self, tmp_path: Path) -> None:
+        results = {
+            "geometric": {"accuracy": 0.95, "completeness": 0.90},
+            "topological": {},
+            "params": {},
+        }
+        json_path = tmp_path / "results.json"
+        json_path.write_text(json.dumps(results))
+
+        runner = CliRunner()
+        result = runner.invoke(main, ["report", str(json_path), "-f", "markdown"])
+        assert result.exit_code == 0
+        assert "# BIM Quality Report" in result.output

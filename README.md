@@ -4,7 +4,15 @@
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Evaluate BIM model quality by comparing generated IFC models against point cloud measurements. Implements geometric and topological metrics inspired by BIMNet's evaluation framework.
+A general-purpose BIM quality validation tool that evaluates IFC models against point cloud measurements. Works with **any IFC file from any BIM software** -- Revit, ArchiCAD, Tekla, FreeCAD, BlenderBIM, or any other IFC-compliant tool.
+
+## Features
+
+- **Overall quality check** -- accuracy, completeness, Chamfer distance, coverage ratio
+- **Per-element analysis** -- evaluate each IfcWall, IfcSlab, IfcDoor, IfcWindow, etc. individually
+- **Deviation maps** -- export point clouds coloured by deviation (blue=close, red=far)
+- **Pass/fail determination** -- configurable threshold for CI/CD integration
+- **Multiple output formats** -- JSON, plain text, and Markdown reports
 
 ## Metrics
 
@@ -52,15 +60,70 @@ pip install -e ".[dev]"
 
 ### Evaluate a BIM model
 
+Works with any IFC file -- from Revit, ArchiCAD, Tekla, or any other BIM tool:
+
 ```bash
-bim-quality-checker check model.ifc scan.ply -o results.json --distance-threshold 0.05
+# Basic quality check
+bim-quality-checker check model.ifc scan.ply -o results.json
+
+# With custom distance threshold
+bim-quality-checker check model.ifc scan.ply --distance-threshold 0.03
+
+# With pass/fail determination (exit code 1 on failure)
+bim-quality-checker check model.ifc scan.ply --threshold 0.85
 ```
 
-### Generate a human-readable report
+### Per-element quality breakdown
+
+Analyse each IFC building element individually and find the worst-performing elements:
 
 ```bash
+bim-quality-checker elements model.ifc scan.ply -o elements.json
+
+# Show top 20 worst elements
+bim-quality-checker elements model.ifc scan.ply --n-worst 20
+```
+
+### Deviation visualisation
+
+Export a point cloud coloured by deviation from the BIM surface (blue=close, red=far):
+
+```bash
+bim-quality-checker deviation model.ifc scan.ply -o deviation.ply
+
+# Custom max deviation for colour scale
+bim-quality-checker deviation model.ifc scan.ply -o deviation.ply --vmax 0.1
+```
+
+The output PLY file can be viewed in CloudCompare, MeshLab, or any 3D viewer that supports vertex colours.
+
+### Generate a report
+
+```bash
+# Plain text report
 bim-quality-checker report results.json
+
+# Markdown report
+bim-quality-checker report results.json -f markdown -o report.md
+
+# JSON format
 bim-quality-checker report results.json -f json -o report.json
+```
+
+### Examples with different BIM software
+
+```bash
+# Revit export
+bim-quality-checker check revit_export.ifc site_scan.ply --threshold 0.85
+
+# ArchiCAD export
+bim-quality-checker check archicad_model.ifc laser_scan.ply -o results.json
+
+# Tekla Structures export
+bim-quality-checker elements tekla_model.ifc scan.ply --n-worst 15
+
+# FreeCAD / BlenderBIM export
+bim-quality-checker deviation freecad_model.ifc survey.ply -o deviation.ply
 ```
 
 ## Testing
