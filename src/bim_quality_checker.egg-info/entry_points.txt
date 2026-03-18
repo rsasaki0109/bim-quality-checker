@@ -1,0 +1,2 @@
+[console_scripts]
+bim-quality-checker = bim_quality_checker.cli:main

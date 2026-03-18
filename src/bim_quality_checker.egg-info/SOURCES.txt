@@ -1,0 +1,13 @@
+README.md
+pyproject.toml
+src/bim_quality_checker/__init__.py
+src/bim_quality_checker/cli.py
+src/bim_quality_checker/loader.py
+src/bim_quality_checker/metrics.py
+src/bim_quality_checker/report.py
+src/bim_quality_checker.egg-info/PKG-INFO
+src/bim_quality_checker.egg-info/SOURCES.txt
+src/bim_quality_checker.egg-info/dependency_links.txt
+src/bim_quality_checker.egg-info/entry_points.txt
+src/bim_quality_checker.egg-info/requires.txt
+src/bim_quality_checker.egg-info/top_level.txt
