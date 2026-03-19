@@ -84,6 +84,82 @@ class TestGenerateReportText:
         assert "BIM Quality Report" in output
 
 
+class TestGenerateReportMarkdown:
+    def test_contains_header(self, sample_results: dict) -> None:
+        output = generate_report(sample_results, fmt="markdown")
+        assert "# BIM Quality Report" in output
+
+    def test_contains_table(self, sample_results: dict) -> None:
+        output = generate_report(sample_results, fmt="markdown")
+        assert "| Accuracy |" in output
+        assert "| Completeness |" in output
+
+    def test_contains_grade(self, sample_results: dict) -> None:
+        output = generate_report(sample_results, fmt="markdown")
+        assert "Grade:" in output
+
+
+class TestPassFailReport:
+    def test_pass_shown(self, sample_results: dict) -> None:
+        sample_results["pass_fail"] = {
+            "threshold": 0.85,
+            "score": 0.90,
+            "passed": True,
+        }
+        output = generate_report(sample_results, fmt="text")
+        assert "PASS" in output
+
+    def test_fail_shown(self, sample_results: dict) -> None:
+        sample_results["pass_fail"] = {
+            "threshold": 0.95,
+            "score": 0.80,
+            "passed": False,
+        }
+        output = generate_report(sample_results, fmt="text")
+        assert "FAIL" in output
+
+    def test_markdown_pass_fail(self, sample_results: dict) -> None:
+        sample_results["pass_fail"] = {
+            "threshold": 0.85,
+            "score": 0.90,
+            "passed": True,
+        }
+        output = generate_report(sample_results, fmt="markdown")
+        assert "**PASS**" in output
+
+
+class TestElementBreakdownReport:
+    def test_element_breakdown_text(self, sample_results: dict) -> None:
+        sample_results["element_breakdown"] = {
+            "by_type_summary": {
+                "IfcWall": {"count": 5, "mean_accuracy": 0.92, "mean_completeness": 0.88},
+            },
+            "worst_elements": [
+                {
+                    "global_id": "abc123",
+                    "ifc_type": "IfcWall",
+                    "accuracy": 0.60,
+                    "mean_deviation": 0.08,
+                },
+            ],
+        }
+        output = generate_report(sample_results, fmt="text")
+        assert "Per-Element Breakdown" in output
+        assert "IfcWall" in output
+        assert "abc123" in output
+
+    def test_element_breakdown_markdown(self, sample_results: dict) -> None:
+        sample_results["element_breakdown"] = {
+            "by_type_summary": {
+                "IfcSlab": {"count": 3, "mean_accuracy": 0.85, "mean_completeness": 0.80},
+            },
+            "worst_elements": [],
+        }
+        output = generate_report(sample_results, fmt="markdown")
+        assert "## Per-Element Breakdown" in output
+        assert "IfcSlab" in output
+
+
 class TestGrading:
     def test_grade_a(self) -> None:
         assert "A" in _grade({"accuracy": 0.97, "completeness": 0.96})
