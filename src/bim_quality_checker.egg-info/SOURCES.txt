@@ -3,7 +3,9 @@ LICENSE
 README.md
 pyproject.toml
 .github/workflows/ci.yml
+examples/demo.ipynb
 src/bim_quality_checker/__init__.py
+src/bim_quality_checker/ci.py
 src/bim_quality_checker/cli.py
 src/bim_quality_checker/deviation_map.py
 src/bim_quality_checker/element_checker.py
@@ -23,6 +25,7 @@ src/bim_quality_checker/__pycache__/metrics.cpython-312.pyc
 src/bim_quality_checker/__pycache__/report.cpython-312.pyc
 tests/__init__.py
 tests/conftest.py
+tests/test_ci.py
 tests/test_cli.py
 tests/test_deviation_map.py
 tests/test_element_checker.py

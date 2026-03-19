@@ -228,5 +228,70 @@ def deviation(
     click.echo("Done.")
 
 
+@main.command()
+@click.argument("ifc_path", type=click.Path(exists=True, path_type=Path))
+@click.argument("pcd_path", type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "--threshold",
+    type=float,
+    default=0.85,
+    show_default=True,
+    help="Pass/fail threshold for mean(accuracy, completeness) (0-1).",
+)
+@click.option(
+    "--distance-threshold",
+    type=float,
+    default=0.05,
+    show_default=True,
+    help="Distance threshold (metres) for accuracy/completeness evaluation.",
+)
+@click.option(
+    "--format", "-f",
+    "fmt",
+    type=click.Choice(["markdown", "github", "text"]),
+    default="markdown",
+    show_default=True,
+    help="Output format: markdown (for PR comments), github (annotations), text.",
+)
+def gate(
+    ifc_path: Path,
+    pcd_path: Path,
+    threshold: float,
+    distance_threshold: float,
+    fmt: str,
+) -> None:
+    """CI/CD quality gate - evaluate and pass/fail a BIM model.
+
+    Runs a full quality check and exits with code 0 (pass) or 1 (fail).
+    Output is designed to be piped to ``gh pr comment``.
+
+    \b
+    IFC_PATH is the path to the IFC file (BIM model).
+    PCD_PATH is the path to the point cloud file (.ply / .pcd / .xyz).
+    """
+    from bim_quality_checker.ci import (
+        QualityGate,
+        format_github_annotation,
+        format_markdown_report,
+    )
+
+    quality_gate = QualityGate()
+    result = quality_gate.check(
+        ifc_path, pcd_path,
+        threshold=threshold,
+        distance_threshold=distance_threshold,
+    )
+
+    if fmt == "markdown":
+        click.echo(format_markdown_report(result))
+    elif fmt == "github":
+        click.echo(format_github_annotation(result))
+    else:
+        click.echo(result.summary_text)
+
+    if not result.passed:
+        sys.exit(1)
+
+
 if __name__ == "__main__":
     main()

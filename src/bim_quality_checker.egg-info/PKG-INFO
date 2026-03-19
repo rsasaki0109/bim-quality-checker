@@ -19,6 +19,7 @@ Dynamic: license-file
 # BIM Quality Checker
 
 [![CI](https://github.com/rsasaki0109/bim-quality-checker/actions/workflows/ci.yml/badge.svg)](https://github.com/rsasaki0109/bim-quality-checker/actions/workflows/ci.yml)
+[![Quality Gate](https://img.shields.io/badge/BIM%20Quality%20Gate-enabled-brightgreen)](https://github.com/rsasaki0109/bim-quality-checker/actions/workflows/bim-quality-gate.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -143,6 +144,63 @@ bim-quality-checker elements tekla_model.ifc scan.ply --n-worst 15
 # FreeCAD / BlenderBIM export
 bim-quality-checker deviation freecad_model.ifc survey.ply -o deviation.ply
 ```
+
+## CI/CD Quality Gate
+
+Automatically enforce BIM quality on every pull request using GitHub Actions.
+
+### Quick start
+
+Add this workflow to any repository that contains IFC models:
+
+```yaml
+# .github/workflows/bim-check.yml
+name: BIM Quality Check
+on:
+  pull_request:
+    paths: ["**.ifc"]
+
+jobs:
+  quality-gate:
+    uses: rsasaki0109/bim-quality-checker/.github/workflows/bim-quality-gate.yml@main
+    with:
+      ifc_path: "models/building.ifc"
+      pointcloud_path: "scans/site.ply"
+      threshold: "0.85"
+```
+
+The workflow will:
+1. Run a full BIM quality evaluation
+2. Post a detailed Markdown report as a PR comment
+3. Fail the check if the score is below the threshold
+
+### Gate CLI command
+
+You can also run the quality gate locally or in custom CI scripts:
+
+```bash
+# Markdown report (default) -- pipe to gh pr comment
+bim-quality-checker gate model.ifc scan.ply --threshold 0.85 --format markdown
+
+# GitHub Actions annotations
+bim-quality-checker gate model.ifc scan.ply --format github
+
+# Plain text summary
+bim-quality-checker gate model.ifc scan.ply --format text
+
+# Exit code: 0 = pass, 1 = fail
+echo $?
+```
+
+### Reusable workflow inputs
+
+| Input | Required | Default | Description |
+|---|---|---|---|
+| `ifc_path` | Yes | -- | Path to IFC file (relative to repo root) |
+| `pointcloud_path` | Yes | -- | Path to point cloud file |
+| `threshold` | No | `0.85` | Pass/fail threshold (0-1) |
+| `distance_threshold` | No | `0.05` | Distance threshold in metres |
+| `python_version` | No | `3.11` | Python version to use |
 
 ## Testing
 
