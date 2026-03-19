@@ -1,0 +1,50 @@
+Metadata-Version: 2.4
+Name: bim-quality-checker
+Version: 0.1.0
+Summary: Evaluate BIM model quality by comparing against point cloud measurements
+License: MIT
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+Requires-Dist: open3d>=0.17
+Requires-Dist: numpy>=1.24
+Requires-Dist: ifcopenshell>=0.7
+Requires-Dist: click>=8.1
+Requires-Dist: trimesh>=4.0
+Provides-Extra: dev
+Requires-Dist: pytest>=7.0; extra == "dev"
+Requires-Dist: ruff>=0.4; extra == "dev"
+
+# BIM Quality Checker
+
+Evaluate BIM model quality by comparing generated IFC models against point cloud measurements. Implements geometric and topological metrics inspired by BIMNet's evaluation framework.
+
+## Metrics
+
+**Geometric** -- point-to-surface distance, accuracy, completeness, coverage ratio, Chamfer distance.
+
+**Topological** -- wall connectivity (connected-component analysis), room closure (watertight check).
+
+## Installation
+
+```bash
+pip install -e .
+```
+
+## Usage
+
+### Evaluate a BIM model
+
+```bash
+bim-quality-checker check model.ifc scan.ply -o results.json --distance-threshold 0.05
+```
+
+### Generate a human-readable report
+
+```bash
+bim-quality-checker report results.json
+bim-quality-checker report results.json -f json -o report.json
+```
+
+## License
+
+MIT

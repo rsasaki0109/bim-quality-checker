@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=68.0", "setuptools-scm>=8.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bim-quality-checker"
+version = "0.1.0"
+description = "Evaluate BIM model quality by comparing against point cloud measurements"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = [
+    "open3d>=0.17",
+    "numpy>=1.24",
+    "ifcopenshell>=0.7",
+    "click>=8.1",
+    "trimesh>=4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.4",
+]
+
+[project.scripts]
+bim-quality-checker = "bim_quality_checker.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
