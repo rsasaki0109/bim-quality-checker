@@ -1,0 +1,108 @@
+name: BIM Quality Gate
+
+on:
+  workflow_call:
+    inputs:
+      ifc_path:
+        description: "Path to the IFC file (relative to repo root)"
+        required: true
+        type: string
+      pointcloud_path:
+        description: "Path to the point cloud file (relative to repo root)"
+        required: true
+        type: string
+      threshold:
+        description: "Pass/fail threshold for mean(accuracy, completeness). E.g. 0.85 = 85%"
+        required: false
+        type: string
+        default: "0.85"
+      distance_threshold:
+        description: "Distance threshold in metres for accuracy/completeness"
+        required: false
+        type: string
+        default: "0.05"
+      python_version:
+        description: "Python version to use"
+        required: false
+        type: string
+        default: "3.11"
+
+jobs:
+  quality-gate:
+    name: BIM Quality Gate
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
+    steps:
+      - name: Checkout caller repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python_version }}
+
+      - name: Install bim-quality-checker
+        run: pip install bim-quality-checker
+
+      - name: Run BIM quality gate
+        id: gate
+        run: |
+          set +e
+          REPORT=$(bim-quality-checker gate \
+            "${{ inputs.ifc_path }}" \
+            "${{ inputs.pointcloud_path }}" \
+            --threshold "${{ inputs.threshold }}" \
+            --distance-threshold "${{ inputs.distance_threshold }}" \
+            --format markdown)
+          EXIT_CODE=$?
+          set -e
+
+          # Save report for PR comment
+          echo "$REPORT" > quality-report.md
+
+          # Write GitHub Actions annotations
+          bim-quality-checker gate \
+            "${{ inputs.ifc_path }}" \
+            "${{ inputs.pointcloud_path }}" \
+            --threshold "${{ inputs.threshold }}" \
+            --distance-threshold "${{ inputs.distance_threshold }}" \
+            --format github || true
+
+          # Propagate exit code
+          echo "exit_code=$EXIT_CODE" >> "$GITHUB_OUTPUT"
+
+      - name: Post PR comment
+        if: github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          BODY=$(cat quality-report.md)
+          COMMENT_TAG="<!-- bim-quality-gate -->"
+          FULL_BODY="${COMMENT_TAG}
+          ${BODY}"
+
+          # Delete previous bot comment if exists
+          EXISTING=$(gh api \
+            "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
+            --jq ".[] | select(.body | startswith(\"${COMMENT_TAG}\")) | .id" \
+            2>/dev/null || true)
+          if [ -n "$EXISTING" ]; then
+            for CID in $EXISTING; do
+              gh api -X DELETE \
+                "repos/${{ github.repository }}/issues/comments/${CID}" || true
+            done
+          fi
+
+          # Post new comment
+          gh api \
+            "repos/${{ github.repository }}/issues/${PR_NUMBER}/comments" \
+            -f body="$FULL_BODY"
+
+      - name: Fail if quality gate did not pass
+        if: steps.gate.outputs.exit_code != '0'
+        run: |
+          echo "::error::BIM quality gate failed. See PR comment for details."
+          exit 1
